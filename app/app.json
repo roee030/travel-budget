@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Triporia",
+    "slug": "triporia",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "triporia",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#f8f9ff"
+    },
+    "ios": { "supportsTablet": true },
+    "android": {
+      "adaptiveIcon": { "backgroundColor": "#00685f" }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "lang": "he",
+      "dir": "rtl"
+    }
+  }
+}

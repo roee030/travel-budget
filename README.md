@@ -5,9 +5,9 @@ flights, hotel, restaurants, transport (public / rental car) and attractions —
 in one place. The user enters their preferences once and comes out with an
 organized, budget-fitted vacation.
 
-> Status: **backend MVP** (Node + Express + Claude) is built and tested.
-> The Expo (React Native for Web) app that implements the mobile/web UI is the
-> next milestone.
+> Status: **backend MVP** (Node + Express + Claude) built & tested, and the
+> **Expo (React Native for Web) app** with all 4 screens (wizard → results →
+> budget → itinerary) wired to the API. One codebase → web + iOS + Android.
 
 ## What it does
 
@@ -97,8 +97,13 @@ curl -X POST http://localhost:4000/api/proposals \
 cp .env.example .env          # optionally add API keys
 npm install
 npm run dev                   # server on http://localhost:4000
-npm test --workspace server   # budget-engine unit tests
+npm run dev:app               # Expo app on http://localhost:8081 (web)
+npm test                      # budget-engine unit tests
 ```
+
+The app (`app/`) is Expo + React Native for Web: `npm run dev:app` opens it in
+the browser; `npm run ios` / `npm run android` (from `app/`) run it natively.
+It talks to the API at `EXPO_PUBLIC_API_URL` (default `http://localhost:4000`).
 
 With no keys set, everything works on sample data + the deterministic planner.
 Add `ANTHROPIC_API_KEY` to enable Claude; add `KIWI_API_KEY`,
@@ -115,7 +120,7 @@ Add `ANTHROPIC_API_KEY` to enable Claude; add `KIWI_API_KEY`,
 
 ## Roadmap
 
-- [ ] **Expo (React Native for Web)** app: the 4 screens above from a single
+- [x] **Expo (React Native for Web)** app: the 4 screens above from a single
       codebase (web + iOS + Android).
 - [ ] Wire real providers (Kiwi / Booking / Google) once keys are provisioned.
 - [ ] Postgres persistence + Redis cache + Pinecone/Chroma vector store.

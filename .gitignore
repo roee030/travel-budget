@@ -8,3 +8,6 @@ npm-debug.log*
 .DS_Store
 coverage/
 .vite/
+.expo/
+web-build/
+*.tsbuildinfo

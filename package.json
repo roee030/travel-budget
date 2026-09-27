@@ -4,13 +4,16 @@
   "private": true,
   "description": "AI-powered vacation planner that builds a complete trip around your budget and preferences.",
   "workspaces": [
-    "server"
+    "server",
+    "app"
   ],
   "scripts": {
     "dev": "npm run dev --workspace server",
     "dev:server": "npm run dev --workspace server",
+    "dev:app": "npm run web --workspace app",
     "build": "npm run build --workspace server",
-    "start": "npm run start --workspace server"
+    "start": "npm run start --workspace server",
+    "test": "npm run test --workspace server"
   },
   "engines": {
     "node": ">=20"
