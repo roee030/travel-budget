@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
 import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor } from '../components/ui';
 import { useStore, money } from '../store';
+import { isDemo } from '../api';
 import type { ProposalStrategy, ProposalSummary } from '../types';
 
 const STRATEGY: Record<ProposalStrategy, { label: string; icon: keyof typeof MaterialIcons.glyphMap }> = {
@@ -130,6 +131,9 @@ export function ResultsScreen() {
           <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>תקציב: {money(request.budgetTotal, request.currency)}</Text>
           <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>• {request.nights} לילות</Text>
         </View>
+        {isDemo ? (
+          <Text style={[typo.labelTag, { color: colors.onSurfaceVariant }]}>מצב הדגמה — נתונים לדוגמה</Text>
+        ) : null}
       </Card>
 
       {proposals.map((p, i) => (

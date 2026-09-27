@@ -7,6 +7,7 @@
     "userInterfaceStyle": "light",
     "scheme": "triporia",
     "newArchEnabled": true,
+    "experiments": { "baseUrl": "/travel-budget" },
     "splash": {
       "backgroundColor": "#f8f9ff"
     },
