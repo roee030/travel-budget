@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
 import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, ProposalCardSkeleton } from '../components/ui';
 import { PlaceImage } from '../components/RemoteImage';
+import { AnimatedPressable } from '../components/AnimatedPressable';
 import { Container, Grid } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
@@ -41,6 +42,7 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
   const s = STRATEGY[proposal.strategy];
   const over = proposal.leftover < 0;
   return (
+    <AnimatedPressable onPress={onChoose} hoverScale={1.015} pressScale={0.99}>
     <Card style={{ padding: 0, overflow: 'hidden' }}>
       {/* Hero */}
       <View style={[styles.hero, { height: featured ? 150 : 120 }]}>
@@ -112,15 +114,13 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
           </View>
         ) : null}
 
-        <Pressable
-          style={({ pressed, hovered }: any) => [styles.cta, hovered && styles.ctaHover, pressed && styles.ctaPressed]}
-          onPress={onChoose}
-        >
+        <AnimatedPressable style={styles.cta} hoverStyle={styles.ctaHover} pressedStyle={styles.ctaPressed} onPress={onChoose}>
           <Text style={[typo.headlineSm, { color: colors.onPrimary }]}>צפה בפירוט המלא</Text>
           <MaterialIcons name="arrow-back" size={20} color={colors.onPrimary} />
-        </Pressable>
+        </AnimatedPressable>
       </View>
     </Card>
+    </AnimatedPressable>
   );
 }
 

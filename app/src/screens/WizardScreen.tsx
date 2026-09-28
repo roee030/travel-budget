@@ -5,6 +5,7 @@ import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { colors, radius, spacing, type as typo, shadow } from '../theme';
 import { Card } from '../components/ui';
 import { PlaceImage } from '../components/RemoteImage';
+import { AnimatedPressable } from '../components/AnimatedPressable';
 import { Container } from '../components/Layout';
 import { BudgetSlider } from '../components/BudgetSlider';
 import { useResponsive } from '../hooks/useResponsive';
@@ -60,10 +61,10 @@ function daysBetween(a: string, b: string): number {
 
 function Chip({ label, active, onPress, icon }: { label: string; active: boolean; onPress: () => void; icon?: keyof typeof MaterialIcons.glyphMap }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, active ? styles.chipActive : styles.chipIdle]}>
+    <AnimatedPressable onPress={onPress} style={[styles.chip, active ? styles.chipActive : styles.chipIdle]} hoverScale={1.05} pressScale={0.94}>
       {icon ? <MaterialIcons name={icon} size={16} color={active ? colors.onPrimary : colors.onSurfaceVariant} /> : null}
       <Text style={[typo.bodySm, { color: active ? colors.onPrimary : colors.onSurfaceVariant, fontFamily: 'Rubik_500Medium' }]}>{label}</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 function Stepper({ value, onChange, min = 0 }: { value: number; onChange: (v: number) => void; min?: number }) {
@@ -101,7 +102,7 @@ function SavedTripsStrip() {
 
 export function WizardScreen() {
   const { request, setRequest, runSearch, loadingProposals, error } = useStore();
-  const { isWide } = useResponsive();
+  const { isWide, isDesktop } = useResponsive();
   const [step, setStep] = useState(0);
 
   const isILS = request.currency === 'ILS';
@@ -160,12 +161,13 @@ export function WizardScreen() {
 
   const isLast = step === STEPS.length - 1;
   const openDestination = request.destination === null;
+  const cardWidthPct = isDesktop ? '31.5%' : '48%';
 
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Container>
-          <View style={[styles.inner, isWide && styles.innerWide]}>
+          <View style={[styles.inner, isWide && styles.innerWide, isDesktop && styles.innerDesktop]}>
             {step === 0 ? <SavedTripsStrip /> : null}
             {/* Progress header */}
             <View style={styles.progress}>
@@ -201,15 +203,15 @@ export function WizardScreen() {
                     <TextInput style={styles.originInput} value={request.origin} onChangeText={(t) => setRequest((r) => ({ ...r, origin: t.toUpperCase() }))} placeholder="TLV" placeholderTextColor={colors.outline} />
                   </View>
                   <View style={styles.destGrid}>
-                    <Pressable onPress={() => setRequest((r) => ({ ...r, destination: null }))} style={[styles.surpriseCard, openDestination && styles.destCardActive]}>
+                    <AnimatedPressable onPress={() => setRequest((r) => ({ ...r, destination: null }))} style={[styles.surpriseCard, { width: cardWidthPct }, openDestination && styles.destCardActive]}>
                       <MaterialIcons name="auto-awesome" size={26} color={colors.tertiary} />
                       <Text style={[typo.headlineSm, { color: colors.onSurface }]}>הפתיעו אותי ✨</Text>
                       <Text style={[typo.bodySm, { color: colors.onSurfaceVariant, textAlign: 'center' }]}>ה-AI יבחר יעדים לפי הסגנון והתקציב</Text>
-                    </Pressable>
+                    </AnimatedPressable>
                     {CATALOG.map((d) => {
                       const active = request.destination === d.key;
                       return (
-                        <Pressable key={d.key} onPress={() => setRequest((r) => ({ ...r, destination: d.key }))} style={[styles.destCard, active && styles.destCardActive]}>
+                        <AnimatedPressable key={d.key} onPress={() => setRequest((r) => ({ ...r, destination: d.key }))} style={[styles.destCard, { width: cardWidthPct }, active && styles.destCardActive]}>
                           <View style={styles.destImage}>
                             <PlaceImage query={d.photo} size={400} />
                           </View>
@@ -218,7 +220,7 @@ export function WizardScreen() {
                             <View style={styles.destCheck}><MaterialIcons name="check" size={16} color={colors.onPrimary} /></View>
                           ) : null}
                           <Text style={styles.destName}>{d.he}</Text>
-                        </Pressable>
+                        </AnimatedPressable>
                       );
                     })}
                   </View>
@@ -372,15 +374,15 @@ export function WizardScreen() {
             {/* Footer nav */}
             <View style={styles.footer}>
               {step > 0 ? (
-                <Pressable style={styles.backBtn} onPress={() => setStep((s) => s - 1)}>
+                <AnimatedPressable style={styles.backBtn} onPress={() => setStep((s) => s - 1)}>
                   <MaterialIcons name="arrow-forward" size={20} color={colors.onSurface} />
                   <Text style={[typo.headlineSm, { color: colors.onSurface }]}>חזרה</Text>
-                </Pressable>
+                </AnimatedPressable>
               ) : (
                 <View style={{ flex: 1 }} />
               )}
               {isLast ? (
-                <Pressable style={[styles.nextBtn, !stepValid() && styles.btnDisabled]} disabled={!stepValid() || loadingProposals} onPress={runSearch}>
+                <AnimatedPressable style={[styles.nextBtn, !stepValid() && styles.btnDisabled]} disabled={!stepValid() || loadingProposals} onPress={runSearch}>
                   {loadingProposals ? (
                     <ActivityIndicator color={colors.onPrimary} />
                   ) : (
@@ -389,12 +391,12 @@ export function WizardScreen() {
                       <Text style={[typo.headlineSm, { color: colors.onPrimary }]}>בנה לי חופשה</Text>
                     </>
                   )}
-                </Pressable>
+                </AnimatedPressable>
               ) : (
-                <Pressable style={[styles.nextBtn, !stepValid() && styles.btnDisabled]} disabled={!stepValid()} onPress={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}>
+                <AnimatedPressable style={[styles.nextBtn, !stepValid() && styles.btnDisabled]} disabled={!stepValid()} onPress={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}>
                   <Text style={[typo.headlineSm, { color: colors.onPrimary }]}>הבא</Text>
                   <MaterialIcons name="arrow-back" size={20} color={colors.onPrimary} />
-                </Pressable>
+                </AnimatedPressable>
               )}
             </View>
           </View>
@@ -422,6 +424,7 @@ const styles = StyleSheet.create({
   savedCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surfaceContainerLowest, padding: spacing.sm, borderRadius: radius.md, minWidth: 180, ...shadow.card },
   inner: { gap: spacing.md },
   innerWide: { maxWidth: 720, alignSelf: 'center', width: '100%' },
+  innerDesktop: { maxWidth: 980 },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   row: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', alignItems: 'center' },
   wrap: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
@@ -441,8 +444,8 @@ const styles = StyleSheet.create({
   originRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.surfaceContainerLow, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.md },
   originInput: { flex: 1, fontFamily: 'Rubik_600SemiBold', fontSize: 15, color: colors.onSurface, textAlign: 'right' },
   destGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  surpriseCard: { width: '48%', minHeight: 120, borderRadius: radius.lg, backgroundColor: colors.surfaceContainerLow, alignItems: 'center', justifyContent: 'center', gap: 4, padding: spacing.sm, borderWidth: 2, borderColor: 'transparent' },
-  destCard: { width: '48%', height: 120, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.primary, justifyContent: 'flex-end', borderWidth: 2, borderColor: 'transparent' },
+  surpriseCard: { minHeight: 120, borderRadius: radius.lg, backgroundColor: colors.surfaceContainerLow, alignItems: 'center', justifyContent: 'center', gap: 4, padding: spacing.sm, borderWidth: 2, borderColor: 'transparent' },
+  destCard: { height: 120, borderRadius: radius.lg, overflow: 'hidden', backgroundColor: colors.primary, justifyContent: 'flex-end', borderWidth: 2, borderColor: 'transparent' },
   destCardActive: { borderColor: colors.primary },
   destImage: { ...StyleSheet.absoluteFillObject },
   destScrim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(11,28,48,0.35)' },

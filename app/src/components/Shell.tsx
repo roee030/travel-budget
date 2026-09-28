@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo, maxContentWidth, gutterFor } from '../theme';
 import { useStore, type TabKey } from '../store';
 import { useResponsive } from '../hooks/useResponsive';
+import { AnimatedPressable } from './AnimatedPressable';
 
 const SUBTITLE: Record<TabKey, string> = {
   wizard: 'Plan',
@@ -59,13 +60,16 @@ function TopTab({ tab }: { tab: (typeof TABS)[number] }) {
   const { tab: active, setTab } = useStore();
   const isActive = tab.key === active;
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={() => setTab(tab.key)}
       style={[styles.topTab, isActive && styles.topTabActive]}
+      hoverStyle={!isActive && styles.topTabHover}
+      hoverScale={1}
+      pressScale={0.96}
     >
       <MaterialIcons name={tab.icon} size={18} color={isActive ? colors.primary : colors.onSurfaceVariant} />
       <Text style={[typo.labelTag, { color: isActive ? colors.primary : colors.onSurfaceVariant }]}>{tab.label}</Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -152,6 +156,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
   },
   topTabActive: { backgroundColor: colors.surfaceContainer },
+  topTabHover: { backgroundColor: colors.surfaceContainerLow },
   currency: {
     flexDirection: 'row',
     alignItems: 'center',
