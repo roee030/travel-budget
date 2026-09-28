@@ -25,7 +25,8 @@ export interface TripRequest {
   partyType: PartyType;
   adults: number;
   children: { age: number }[];
-  vibe: TripVibe;
+  /** Multi-select: a trip can mix several vibes, e.g. relaxation + food. */
+  vibes: TripVibe[];
   transport: TransportPreference;
   budgetTotal: number;
   currency: string;
@@ -51,6 +52,9 @@ export interface FlightOption {
   durationMinutes: number;
   from: string;
   to: string;
+  /** Domain used to fetch the airline's logo image (e.g. "klm.com"). */
+  logoDomain?: string;
+  departTime?: string;
 }
 export interface HotelOption {
   id: string;
@@ -112,6 +116,8 @@ export interface TripPlan {
   allocation: BudgetAllocation;
   estimatedSpend: BudgetAllocation;
   selectedFlight: FlightOption | null;
+  /** The full set of flight options for this destination, so the user can browse/switch. */
+  flightOptions: FlightOption[];
   selectedHotel: HotelOption | null;
   days: ItineraryDay[];
   rationale: string;

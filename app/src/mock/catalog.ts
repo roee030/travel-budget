@@ -264,6 +264,27 @@ export const CATALOG: MockDestination[] = [
   },
 ];
 
+/** Airline name → website domain, used to fetch a real logo image (Clearbit Logo API, keyless). */
+export const AIRLINE_DOMAINS: Record<string, string> = {
+  Vueling: 'vueling.com',
+  Iberia: 'iberia.com',
+  'Wizz Air': 'wizzair.com',
+  'TAP Air Portugal': 'flytap.com',
+  easyJet: 'easyjet.com',
+  Ryanair: 'ryanair.com',
+  'ITA Airways': 'ita-airways.com',
+  'El Al': 'elal.com',
+  'Thai Airways': 'thaiairways.com',
+  Emirates: 'emirates.com',
+  KLM: 'klm.com',
+  Transavia: 'transavia.com',
+  Aegean: 'aegeanair.com',
+};
+
+export function airlineDomain(airline: string): string | undefined {
+  return AIRLINE_DOMAINS[airline];
+}
+
 export function findDestination(nameOrKey: string): MockDestination | undefined {
   const q = nameOrKey.trim().toLowerCase();
   return (

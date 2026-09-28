@@ -8,7 +8,7 @@ import type {
   TripRequest,
   TripVibe,
 } from '../types';
-import { CATALOG, findDestination, type MockDestination, type MockPlace } from './catalog';
+import { CATALOG, findDestination, airlineDomain, type MockDestination, type MockPlace } from './catalog';
 
 // ── currency: catalog is USD; convert to the user's currency for display ──
 function fx(currency: string): number {
@@ -47,9 +47,23 @@ const VIBE_WEIGHTS: Record<TripVibe, Omit<BudgetAllocation, 'buffer'>> = {
 const BUFFER_RATIO = 0.08;
 const round = (n: number) => Math.round(n);
 
+/** Blend the weights of every selected vibe (simple average) so a multi-vibe
+ * trip (e.g. relaxation + food) balances both instead of picking just one. */
+function blendedVibeWeights(vibes: TripVibe[]): Omit<BudgetAllocation, 'buffer'> {
+  const list = vibes.length ? vibes : ['mixed' as TripVibe];
+  const keys: (keyof Omit<BudgetAllocation, 'buffer'>)[] = ['flights', 'hotel', 'food', 'attractions', 'transport'];
+  const sum: Omit<BudgetAllocation, 'buffer'> = { flights: 0, hotel: 0, food: 0, attractions: 0, transport: 0 };
+  for (const v of list) {
+    const w = VIBE_WEIGHTS[v] ?? VIBE_WEIGHTS.mixed;
+    for (const k of keys) sum[k] += w[k];
+  }
+  for (const k of keys) sum[k] /= list.length;
+  return sum;
+}
+
 export function allocate(request: TripRequest): BudgetAllocation {
   const spendable = request.budgetTotal * (1 - BUFFER_RATIO);
-  const w = VIBE_WEIGHTS[request.vibe] ?? VIBE_WEIGHTS.mixed;
+  const w = blendedVibeWeights(request.vibes);
   const a: BudgetAllocation = {
     flights: round(spendable * w.flights),
     hotel: round(spendable * w.hotel),
@@ -74,7 +88,7 @@ function pickCandidates(request: TripRequest): MockDestination[] {
     if (d) return [d, d, d];
   }
   const hints = request.destinationHints.map((h) => h.toLowerCase());
-  const wanted = new Set<string>([...hints, request.vibe]);
+  const wanted = new Set<string>([...hints, ...request.vibes]);
   const scored = CATALOG.map((d) => {
     let score = d.tags.reduce((s, t) => s + (wanted.has(t) ? 2 : 0), 0);
     score += Math.random() * 0.001; // stable enough; tie-break
@@ -83,6 +97,30 @@ function pickCandidates(request: TripRequest): MockDestination[] {
   scored.sort((a, b) => b.score - a.score);
   const top = scored.map((s) => s.d);
   return top.slice(0, 3).length === 3 ? top.slice(0, 3) : CATALOG.slice(0, 3);
+}
+
+/** Generates a realistic, browsable list of flight options across the destination's
+ * airlines — a direct pricier option and cheaper 1-stop options — each carrying an
+ * airline logo domain for display. */
+function buildFlightOptions(d: MockDestination, request: TripRequest, rate: number, heads: number) {
+  const base = d.baseFlight * heads * rate;
+  return d.airlines.map((airline, i): import('../types').FlightOption => {
+    const stops = i === 0 ? 0 : i === 1 ? 1 : 1;
+    const priceFactor = i === 0 ? 1.15 : i === 1 ? 1 : 0.82;
+    const durationBase = 180 + Math.round(d.baseFlight / 3);
+    return {
+      id: `flt-${d.key}-${i}`,
+      airline,
+      stops,
+      price: round(base * priceFactor),
+      currency: request.currency,
+      durationMinutes: durationBase + stops * 110,
+      from: request.origin,
+      to: d.key,
+      logoDomain: airlineDomain(airline),
+      departTime: ['06:15', '10:40', '14:05'][i % 3],
+    };
+  });
 }
 
 function pickHotel(d: MockDestination, request: TripRequest, strategy: ProposalStrategy, nightlyBudget: number) {
@@ -110,14 +148,20 @@ export function generateProposals(request: TripRequest): ProposalSummary[] {
     const strategy = STRATEGIES[i % 3];
     const nightlyBudgetUsd = alloc.hotel / Math.max(1, nights) / rate;
     const hotel = pickHotel(d, request, strategy, nightlyBudgetUsd);
+    const flightOptions = buildFlightOptions(d, request, rate, heads);
+    const chosenFlight =
+      strategy === 'max_savings'
+        ? [...flightOptions].sort((a, b) => a.price - b.price)[0]
+        : strategy === 'exact_budget'
+          ? [...flightOptions].sort((a, b) => b.price - a.price)[0]
+          : flightOptions.find((f) => f.stops === 0) ?? flightOptions[0];
     const factor = strategy === 'max_savings' ? 0.75 : strategy === 'exact_budget' ? 1.15 : 1;
-    const flightFactor = strategy === 'max_savings' ? 0.85 : strategy === 'exact_budget' ? 1.2 : 1;
 
     const avgMeal = d.restaurants.reduce((s, r) => s + r.cost, 0) / d.restaurants.length;
     const avgAttr = d.attractions.reduce((s, a) => s + a.cost, 0) / d.attractions.length;
 
     const estimatedSpend: BudgetAllocation = {
-      flights: round(d.baseFlight * heads * rate * flightFactor),
+      flights: chosenFlight.price,
       hotel: round(hotel.pricePerNight * rate * nights),
       food: round(avgMeal * heads * 2 * nights * rate * factor),
       attractions: round(avgAttr * heads * 1.5 * nights * rate * factor),
@@ -134,12 +178,12 @@ export function generateProposals(request: TripRequest): ProposalSummary[] {
     );
 
     const tags: string[] = [];
-    tags.push('טיסות ישירות');
+    tags.push(chosenFlight.stops === 0 ? 'טיסות ישירות' : `${chosenFlight.stops} עצירה`);
     tags.push(`מלון ${hotel.stars}★`);
     if (request.transport === 'rental_car') tags.push('רכב שכור');
     else tags.push('תחבורה ציבורית');
     tags.push(`${Math.min(d.attractions.length, 5)} אטרקציות`);
-    if (request.vibe === 'food') tags.push('מסלול קולינרי');
+    if (request.vibes.includes('food')) tags.push('מסלול קולינרי');
 
     return {
       id: `${d.key}-${strategy}`,
@@ -155,16 +199,7 @@ export function generateProposals(request: TripRequest): ProposalSummary[] {
       tags: tags.slice(0, 5),
       headlineInsight: d.insights[0] ?? null,
       imageQuery: d.photo,
-      topFlight: {
-        id: `flt-${d.key}`,
-        airline: d.airlines[0],
-        stops: 0,
-        price: estimatedSpend.flights,
-        currency: request.currency,
-        durationMinutes: 180 + Math.round(d.baseFlight / 3),
-        from: request.origin,
-        to: d.key,
-      },
+      topFlight: chosenFlight,
       topHotel: {
         id: `htl-${d.key}`,
         name: hotel.name,
@@ -206,13 +241,15 @@ export function generatePlan(request: TripRequest, destinationName: string): Tri
   const heads = request.adults + request.children.length;
   const withKids = request.children.length > 0;
   const alloc = allocate(request);
-  const r = rng(hash(d.key + request.vibe + request.nights + request.budgetTotal));
+  const r = rng(hash(d.key + request.vibes.join(',') + request.nights + request.budgetTotal));
 
   const hotel = pickHotel(d, request, 'best_match', alloc.hotel / Math.max(1, request.nights) / rate);
+  const flightOptions = buildFlightOptions(d, request, rate, heads);
+  const selectedFlight = flightOptions.find((f) => f.stops === 0) ?? flightOptions[0];
   const attractions = shuffle([...d.attractions], r);
   const restaurants = shuffle([...d.restaurants], r);
   const nightlife = shuffle([...d.nightlife], r);
-  const perDay = request.vibe === 'relaxation' ? 1 : request.vibe === 'attractions' ? 3 : 2;
+  const perDay = request.vibes.includes('attractions') ? 3 : request.vibes.length === 1 && request.vibes[0] === 'relaxation' ? 1 : 2;
 
   const days: ItineraryDay[] = [];
   let ai = 0;
@@ -224,10 +261,11 @@ export function generatePlan(request: TripRequest, destinationName: string): Tri
       items.push({
         time: '09:30',
         category: 'flight',
-        title: `טיסה ${request.origin} → ${d.key} (${d.airlines[0]})`,
+        title: `טיסה ${request.origin} → ${d.key} (${selectedFlight.airline})`,
         description: 'נחיתה, איסוף מזוודות והגעה למלון.',
-        estimatedCost: round(d.baseFlight * heads * rate),
-        refId: `flt-${d.key}`,
+        estimatedCost: selectedFlight.price,
+        refId: selectedFlight.id,
+        imageQuery: undefined,
       });
       items.push({
         time: '13:00',
@@ -279,16 +317,8 @@ export function generatePlan(request: TripRequest, destinationName: string): Tri
     budgetTotal: request.budgetTotal,
     allocation: alloc,
     estimatedSpend,
-    selectedFlight: {
-      id: `flt-${d.key}`,
-      airline: d.airlines[0],
-      stops: 0,
-      price: round(d.baseFlight * heads * rate),
-      currency: request.currency,
-      durationMinutes: 180,
-      from: request.origin,
-      to: d.key,
-    },
+    selectedFlight,
+    flightOptions,
     selectedHotel: {
       id: `htl-${d.key}`,
       name: hotel.name,
@@ -300,7 +330,7 @@ export function generatePlan(request: TripRequest, destinationName: string): Tri
       familyFriendly: hotel.familyFriendly,
     },
     days,
-    rationale: `המסלול נבנה לפי אופי "${vibeLabel(request.vibe)}" ובתוך התקציב, עם איזון בין אטרקציות, ארוחות ומנוחה ב${d.key}.`,
+    rationale: `המסלול נבנה לפי אופי "${vibeLabel(request.vibes)}" ובתוך התקציב, עם איזון בין אטרקציות, ארוחות ומנוחה ב${d.key}.`,
     tips: d.insights,
     usedSampleData: true,
   };
@@ -381,15 +411,16 @@ function shuffle<T>(arr: T[], rand: () => number): T[] {
   }
   return arr;
 }
-function vibeLabel(v: TripVibe): string {
-  const map: Record<TripVibe, string> = {
-    relaxation: 'בטן-גב',
-    attractions: 'אטרקציות',
-    nightlife: 'חיי לילה',
-    food: 'קולינרי',
-    nature: 'טבע',
-    culture: 'תרבות',
-    mixed: 'קצת מהכל',
-  };
-  return map[v] ?? 'מעורב';
+const VIBE_LABELS: Record<TripVibe, string> = {
+  relaxation: 'בטן-גב',
+  attractions: 'אטרקציות',
+  nightlife: 'חיי לילה',
+  food: 'קולינרי',
+  nature: 'טבע',
+  culture: 'תרבות',
+  mixed: 'קצת מהכל',
+};
+function vibeLabel(vibes: TripVibe[]): string {
+  if (!vibes.length) return 'מעורב';
+  return vibes.map((v) => VIBE_LABELS[v] ?? v).join(' + ');
 }

@@ -116,6 +116,16 @@ export function destinationImageUrl(query: string, w = 900, h = 500): string {
   return `https://loremflickr.com/${w}/${h}/${encodeURIComponent(keywords || 'travel')}`;
 }
 
+/**
+ * An airline's real logo, keyless via Clearbit's Logo API. Falls back to a
+ * generic monogram square when the domain is unknown — callers should still
+ * show a plane icon overlay/placeholder while the image loads.
+ */
+export function airlineLogoUrl(domain: string | undefined, size = 80): string {
+  if (!domain) return `https://logo.clearbit.com/airline.com?size=${size}`;
+  return `https://logo.clearbit.com/${domain}?size=${size}`;
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceContainerLowest,

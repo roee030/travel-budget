@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
-import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor } from '../components/ui';
+import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, airlineLogoUrl } from '../components/ui';
 import { Container } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
-import type { BudgetCategory } from '../types';
+import type { BudgetCategory, FlightOption } from '../types';
 
 const CATEGORY_META: { key: BudgetCategory; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { key: 'flights', label: 'טיסות הלוך ושוב', icon: 'flight' },
@@ -37,6 +37,37 @@ function Accordion({ title, icon, amount, currency, children, open: openInit }: 
   );
 }
 
+/** One selectable flight option in the browsable gallery, with the airline's logo. */
+function FlightOptionCard({ flight, selected, onSelect, currency }: { flight: FlightOption; selected: boolean; onSelect: () => void; currency: string }) {
+  return (
+    <Pressable
+      style={({ hovered }: any) => [styles.flightCard, selected && styles.flightCardSelected, hovered && !selected && styles.flightCardHover]}
+      onPress={onSelect}
+    >
+      <View style={styles.flightLogoWrap}>
+        <Image source={{ uri: airlineLogoUrl(flight.logoDomain, 96) }} style={styles.flightLogo} resizeMode="contain" />
+      </View>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[typo.bodyMd, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>{flight.airline}</Text>
+        <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>
+          {flight.departTime ?? ''} · {flight.stops === 0 ? 'ישיר' : `${flight.stops} עצירה`} · {Math.round(flight.durationMinutes / 60)} שעות
+        </Text>
+      </View>
+      <View style={{ alignItems: 'flex-end', gap: 4 }}>
+        <Text style={[typo.numericMd, { color: colors.onSurface }]}>{money(flight.price, currency)}</Text>
+        {selected ? (
+          <View style={styles.selectedPill}>
+            <MaterialIcons name="check" size={12} color={colors.onPrimary} />
+            <Text style={[typo.labelTag, { color: colors.onPrimary }]}>נבחר</Text>
+          </View>
+        ) : (
+          <Text style={[typo.labelTag, { color: colors.primary }]}>בחר טיסה</Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
 function DetailRow({ label, value }: { label: string; value?: string }) {
   return (
     <View style={styles.detailRow}>
@@ -48,7 +79,7 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
 }
 
 export function BudgetScreen() {
-  const { plan, loadingPlan, currency, setTab } = useStore();
+  const { plan, loadingPlan, currency, setTab, selectFlight } = useStore();
   const { isWide } = useResponsive();
 
   if (loadingPlan) {
@@ -133,12 +164,18 @@ export function BudgetScreen() {
           <View style={isWide ? styles.rightColWide : styles.col}>
       {/* Accordions */}
       <Accordion title="טיסות הלוך ושוב" icon="flight" amount={spend.flights} currency={cur} open>
-        {flight ? (
+        {plan.flightOptions.length ? (
           <>
-            <DetailRow label={`${flight.from} → ${flight.to} · ${flight.airline}`} value={flight.stops === 0 ? 'ישיר' : `${flight.stops} עצירות`} />
-            <DetailRow label={`משך טיסה משוער: ${Math.round(flight.durationMinutes / 60)} שעות`} />
+            <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>{plan.request.origin} → {plan.destination} · כל האפשרויות מ־{plan.flightOptions.length} חברות תעופה</Text>
+            {plan.flightOptions.map((f) => (
+              <FlightOptionCard key={f.id} flight={f} selected={plan.selectedFlight?.id === f.id} onSelect={() => selectFlight(f.id)} currency={cur} />
+            ))}
           </>
-        ) : <DetailRow label="לא נבחרה טיסה" />}
+        ) : flight ? (
+          <DetailRow label={`${flight.from} → ${flight.to} · ${flight.airline}`} value={flight.stops === 0 ? 'ישיר' : `${flight.stops} עצירות`} />
+        ) : (
+          <DetailRow label="לא נבחרה טיסה" />
+        )}
       </Accordion>
 
       <Accordion title="מלונות ואירוח" icon="hotel" amount={spend.hotel} currency={cur} open>
@@ -179,6 +216,12 @@ export function BudgetScreen() {
 const styles = StyleSheet.create({
   scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl },
   oneCol: { gap: spacing.md },
+  flightCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surfaceContainerLow, padding: spacing.sm, borderRadius: radius.md, borderWidth: 2, borderColor: 'transparent' },
+  flightCardHover: { backgroundColor: colors.surfaceContainer },
+  flightCardSelected: { borderColor: colors.primary, backgroundColor: 'rgba(0,104,95,0.06)' },
+  flightLogoWrap: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.surfaceContainerLowest, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  flightLogo: { width: 32, height: 32 },
+  selectedPill: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: colors.primary, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.full },
   twoCol: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
   col: { gap: spacing.md },
   leftColWide: { flex: 1, gap: spacing.md },

@@ -278,11 +278,29 @@ export function WizardScreen() {
 
               {STEPS[step].key === 'style' && (
                 <>
-                  <StepTitle icon="mood" title="מה האופי של החופשה?" subtitle="בחרו סגנון ואיך תעדיפו לנוע" />
+                  <StepTitle icon="mood" title="מה האופי של החופשה?" subtitle="אפשר לבחור כמה סגנונות יחד — למשל בטן-גב + קולינרי" />
                   <View style={styles.wrap}>
-                    {VIBES.map((v) => (
-                      <Chip key={v.key} label={v.label} icon={v.icon} active={request.vibe === v.key} onPress={() => setRequest((r) => ({ ...r, vibe: v.key }))} />
-                    ))}
+                    {VIBES.map((v) => {
+                      const active = request.vibes.includes(v.key);
+                      return (
+                        <Chip
+                          key={v.key}
+                          label={v.label}
+                          icon={v.icon}
+                          active={active}
+                          onPress={() =>
+                            setRequest((r) => ({
+                              ...r,
+                              vibes: active
+                                ? r.vibes.length > 1
+                                  ? r.vibes.filter((x) => x !== v.key)
+                                  : r.vibes // keep at least one selected
+                                : [...r.vibes, v.key],
+                            }))
+                          }
+                        />
+                      );
+                    })}
                   </View>
                   <Text style={[typo.bodySm, { color: colors.onSurfaceVariant, marginTop: spacing.sm }]}>תחבורה</Text>
                   <View style={styles.wrap}>

@@ -20,7 +20,7 @@ export function defaultRequest(): TripRequest {
     partyType: 'couple',
     adults: 2,
     children: [],
-    vibe: 'mixed',
+    vibes: ['mixed'],
     transport: 'mixed',
     budgetTotal: 12500,
     currency: 'ILS',
@@ -46,6 +46,7 @@ interface StoreValue {
   choose: (proposal: ProposalSummary) => Promise<void>;
   swapItem: (dayIndex: number, itemIndex: number) => void;
   repace: (dayIndex: number, mode: 'relax' | 'intense') => void;
+  selectFlight: (flightId: string) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -109,6 +110,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setPlan((p) => (p ? repaceDay(p, dayIndex, mode) : p));
   }, []);
 
+  const selectFlight = useCallback((flightId: string) => {
+    setPlan((p) => {
+      if (!p) return p;
+      const flight = p.flightOptions.find((f) => f.id === flightId);
+      if (!flight) return p;
+      const delta = flight.price - (p.selectedFlight?.price ?? 0);
+      return {
+        ...p,
+        selectedFlight: flight,
+        estimatedSpend: { ...p.estimatedSpend, flights: p.estimatedSpend.flights + delta },
+      };
+    });
+  }, []);
+
   const value = useMemo<StoreValue>(
     () => ({
       tab,
@@ -127,8 +142,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       choose,
       swapItem,
       repace,
+      selectFlight,
     }),
-    [tab, request, proposals, plan, selectedProposalId, loadingProposals, loadingPlan, error, currency, toggleCurrency, runSearch, choose, swapItem, repace],
+    [tab, request, proposals, plan, selectedProposalId, loadingProposals, loadingPlan, error, currency, toggleCurrency, runSearch, choose, swapItem, repace, selectFlight],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
