@@ -36,6 +36,11 @@ jobs:
         run: npm install
 
       - name: Export Expo web build
+        # When the repo variable EXPO_PUBLIC_API_URL is set (to the deployed
+        # backend URL), the site calls the live API; otherwise it stays in demo
+        # mode with bundled fixtures.
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
         run: cd app && npx expo export --platform web
 
       - name: Upload Pages artifact

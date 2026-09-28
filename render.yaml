@@ -1,0 +1,29 @@
+# Render Blueprint — one-click-ish deploy of the Triporia API.
+# In Render: New + → Blueprint → connect this repo → it reads this file.
+# Then fill the `sync: false` secrets (API keys) in the Render dashboard.
+services:
+  - type: web
+    name: triporia-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      # Allow the GitHub Pages site (and local dev) to call the API.
+      - key: CORS_ORIGIN
+        value: https://roee030.github.io,http://localhost:8081,http://localhost:5173
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+      # Secrets — set these in the Render dashboard (kept out of git).
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: KIWI_API_KEY
+        sync: false
+      - key: GOOGLE_PLACES_API_KEY
+        sync: false
+      - key: SERPAPI_KEY
+        sync: false

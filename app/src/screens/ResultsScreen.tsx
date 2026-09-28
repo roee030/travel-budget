@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
-import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor } from '../components/ui';
+import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, destinationImageUrl } from '../components/ui';
 import { Container, Grid } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
@@ -42,7 +42,9 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
   return (
     <Card style={{ padding: 0, overflow: 'hidden' }}>
       {/* Hero */}
-      <View style={[styles.hero, { height: featured ? 132 : 104 }]}>
+      <View style={[styles.hero, { height: featured ? 150 : 120 }]}>
+        <Image source={{ uri: destinationImageUrl(proposal.imageQuery) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
         <View style={styles.heroBadges}>
           <View style={styles.aiBadge}>
             <MaterialIcons name={s.icon} size={14} color={colors.onTertiaryContainer} />
@@ -106,7 +108,10 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
           </View>
         ) : null}
 
-        <Pressable style={styles.cta} onPress={onChoose}>
+        <Pressable
+          style={({ pressed, hovered }: any) => [styles.cta, hovered && styles.ctaHover, pressed && styles.ctaPressed]}
+          onPress={onChoose}
+        >
           <Text style={[typo.headlineSm, { color: colors.onPrimary }]}>צפה בפירוט המלא</Text>
           <MaterialIcons name="arrow-back" size={20} color={colors.onPrimary} />
         </Pressable>
@@ -159,7 +164,8 @@ const styles = StyleSheet.create({
   planBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm },
   summaryPill: { backgroundColor: colors.surfaceContainerLow, gap: spacing.xs },
   metaRow: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center', flexWrap: 'wrap' },
-  hero: { backgroundColor: colors.primary, justifyContent: 'space-between', padding: spacing.sm },
+  hero: { backgroundColor: colors.primary, justifyContent: 'space-between', padding: spacing.sm, overflow: 'hidden' },
+  heroScrim: { backgroundColor: 'rgba(11,28,48,0.38)' },
   heroBadges: { flexDirection: 'row', justifyContent: 'space-between' },
   aiBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.tertiaryContainer, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.full },
   heroBottom: {},
@@ -174,4 +180,6 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4, flexGrow: 1, flexBasis: 120, minWidth: 100 },
   insight: { flexDirection: 'row', gap: spacing.xs, backgroundColor: 'rgba(192,84,0,0.08)', padding: spacing.sm, borderRadius: radius.md, alignItems: 'flex-start' },
   cta: { height: 48, borderRadius: radius.lg, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs },
+  ctaHover: { backgroundColor: colors.onPrimaryFixedVariant },
+  ctaPressed: { opacity: 0.85 },
 });

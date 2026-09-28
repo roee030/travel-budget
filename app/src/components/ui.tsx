@@ -70,6 +70,21 @@ export function LegendDot({ color }: { color: string }) {
 
 export const budgetCategoryColor = (k: string) => CATEGORY_COLORS[k] ?? colors.outline;
 
+/**
+ * A keyless, themed destination photo URL derived from a query like
+ * "Barcelona travel skyline". Uses LoremFlickr (no API key); if it fails to
+ * load the caller keeps its solid teal fallback behind the image. When the
+ * Google Places integration is live, swap this for real place photos.
+ */
+export function destinationImageUrl(query: string, w = 900, h = 500): string {
+  const keywords = query
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .join(',');
+  return `https://loremflickr.com/${w}/${h}/${encodeURIComponent(keywords || 'travel')}`;
+}
+
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surfaceContainerLowest,
