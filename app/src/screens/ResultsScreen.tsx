@@ -3,6 +3,8 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
 import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor } from '../components/ui';
+import { Container, Grid } from '../components/Layout';
+import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
 import { isDemo } from '../api';
 import type { ProposalStrategy, ProposalSummary } from '../types';
@@ -115,36 +117,44 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
 
 export function ResultsScreen() {
   const { proposals, request, setTab, choose } = useStore();
+  const { columns } = useResponsive();
 
   if (proposals.length === 0) {
     return <EmptyState onPlan={() => setTab('wizard')} />;
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <Card style={styles.summaryPill}>
-        <View style={styles.rowCenter}>
-          <MaterialIcons name="auto-awesome" size={22} color={colors.primary} />
-          <Text style={[typo.headlineSm, { color: colors.primary }]}>נמצאו {proposals.length} הצעות מותאמות</Text>
-        </View>
-        <View style={styles.metaRow}>
-          <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>תקציב: {money(request.budgetTotal, request.currency)}</Text>
-          <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>• {request.nights} לילות</Text>
-        </View>
-        {isDemo ? (
-          <Text style={[typo.labelTag, { color: colors.onSurfaceVariant }]}>מצב הדגמה — נתונים לדוגמה</Text>
-        ) : null}
-      </Card>
+    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <Container>
+        <View style={styles.container}>
+          <Card style={styles.summaryPill}>
+            <View style={styles.rowCenter}>
+              <MaterialIcons name="auto-awesome" size={22} color={colors.primary} />
+              <Text style={[typo.headlineSm, { color: colors.primary }]}>נמצאו {proposals.length} הצעות מותאמות</Text>
+            </View>
+            <View style={styles.metaRow}>
+              <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>תקציב: {money(request.budgetTotal, request.currency)}</Text>
+              <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>• {request.nights} לילות</Text>
+            </View>
+            {isDemo ? (
+              <Text style={[typo.labelTag, { color: colors.onSurfaceVariant }]}>מצב הדגמה — נתונים לדוגמה</Text>
+            ) : null}
+          </Card>
 
-      {proposals.map((p, i) => (
-        <ProposalCard key={p.id} proposal={p} featured={i === 0} onChoose={() => choose(p)} />
-      ))}
+          <Grid columns={columns}>
+            {proposals.map((p, i) => (
+              <ProposalCard key={p.id} proposal={p} featured={columns === 1 && i === 0} onChoose={() => choose(p)} />
+            ))}
+          </Grid>
+        </View>
+      </Container>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.margin, gap: spacing.md, paddingBottom: spacing.xl },
+  scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl },
+  container: { gap: spacing.md },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
   planBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.md, height: 40, borderRadius: radius.full, alignItems: 'center', justifyContent: 'center', marginTop: spacing.sm },
   summaryPill: { backgroundColor: colors.surfaceContainerLow, gap: spacing.xs },
@@ -161,7 +171,7 @@ const styles = StyleSheet.create({
   breakdown: { backgroundColor: colors.surfaceContainerLow, padding: spacing.sm, borderRadius: radius.md, gap: 6 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   legendGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, paddingTop: 4 },
-  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '45%' },
+  legendItem: { flexDirection: 'row', alignItems: 'center', gap: 4, flexGrow: 1, flexBasis: 120, minWidth: 100 },
   insight: { flexDirection: 'row', gap: spacing.xs, backgroundColor: 'rgba(192,84,0,0.08)', padding: spacing.sm, borderRadius: radius.md, alignItems: 'flex-start' },
   cta: { height: 48, borderRadius: radius.lg, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: spacing.xs },
 });

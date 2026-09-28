@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, ActivityIndicator, Platform, I18nManager } from 'react-native';
+import { View, StyleSheet, ActivityIndicator, I18nManager } from 'react-native';
 import { SafeAreaView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import {
@@ -71,12 +71,10 @@ export default function App() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.surface },
-  // On web, center the mobile-width app like the mockups.
+  // Full-width shell; screens center their own content via <Container>.
   frame: {
     flex: 1,
     width: '100%',
-    maxWidth: Platform.OS === 'web' ? 480 : undefined,
-    alignSelf: 'center',
     backgroundColor: colors.surface,
   },
   screen: { flex: 1 },

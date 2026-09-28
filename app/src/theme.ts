@@ -53,6 +53,21 @@ export const spacing = {
   xl: 36,
 } as const;
 
+/** Responsive breakpoints (min-width, px). mobile < tablet < desktop < wide. */
+export const breakpoints = {
+  tablet: 768,
+  desktop: 1024,
+  wide: 1440,
+} as const;
+
+/** Max width the centered content is constrained to on large screens. */
+export const maxContentWidth = 1200;
+
+/** Horizontal page gutter per breakpoint. */
+export function gutterFor(bp: 'mobile' | 'tablet' | 'desktop'): number {
+  return bp === 'mobile' ? spacing.margin : bp === 'tablet' ? spacing.lg : spacing.marginLg;
+}
+
 export const radius = {
   sm: 8,
   md: 10,

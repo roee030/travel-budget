@@ -3,6 +3,8 @@ import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
 import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor } from '../components/ui';
+import { Container } from '../components/Layout';
+import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
 import type { BudgetCategory } from '../types';
 
@@ -47,6 +49,7 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
 
 export function BudgetScreen() {
   const { plan, loadingPlan, currency, setTab } = useStore();
+  const { isWide } = useResponsive();
 
   if (loadingPlan) {
     return (
@@ -76,7 +79,10 @@ export function BudgetScreen() {
   const hotel = plan.selectedHotel;
 
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <Container>
+        <View style={isWide ? styles.twoCol : styles.oneCol}>
+          <View style={isWide ? styles.leftColWide : styles.col}>
       {/* Overview */}
       <Card style={{ backgroundColor: colors.surfaceContainerLow, gap: spacing.xs }}>
         <View style={styles.rowCenter}>
@@ -122,7 +128,9 @@ export function BudgetScreen() {
           <Text style={[typo.bodySm, { color: colors.onSurfaceVariant, flex: 1 }]}>הנתונים לדוגמה — יתעדכנו לנתונים אמיתיים כשיוגדרו מפתחות API.</Text>
         </View>
       ) : null}
+          </View>
 
+          <View style={isWide ? styles.rightColWide : styles.col}>
       {/* Accordions */}
       <Accordion title="טיסות הלוך ושוב" icon="flight" amount={spend.flights} currency={cur} open>
         {flight ? (
@@ -161,12 +169,20 @@ export function BudgetScreen() {
           <Text style={[typo.headlineSm, { color: colors.onPrimary }]}>צפה במסלול היומי</Text>
         </Pressable>
       </View>
+          </View>
+        </View>
+      </Container>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.margin, gap: spacing.md, paddingBottom: spacing.xl },
+  scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl },
+  oneCol: { gap: spacing.md },
+  twoCol: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  col: { gap: spacing.md },
+  leftColWide: { flex: 1, gap: spacing.md },
+  rightColWide: { flex: 1.15, gap: spacing.md },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

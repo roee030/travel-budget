@@ -3,6 +3,8 @@ import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo, categoryVisual } from '../theme';
 import { Card } from '../components/ui';
+import { Container } from '../components/Layout';
+import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
 import type { ItineraryItem } from '../types';
 
@@ -44,6 +46,7 @@ function TimelineItem({ item, currency, last }: { item: ItineraryItem; currency:
 
 export function ItineraryScreen() {
   const { plan, loadingPlan, currency } = useStore();
+  const { isWide } = useResponsive();
   const [activeDay, setActiveDay] = useState(1);
 
   if (loadingPlan) {
@@ -66,79 +69,110 @@ export function ItineraryScreen() {
   const day = plan.days.find((d) => d.day === activeDay) ?? plan.days[0];
   const dayCost = day ? day.items.reduce((s, it) => s + (it.estimatedCost || 0), 0) : 0;
 
+  const dayButtons = plan.days.map((d) => {
+    const active = d.day === activeDay;
+    return (
+      <Pressable
+        key={d.day}
+        onPress={() => setActiveDay(d.day)}
+        style={[styles.dayChip, isWide && styles.dayChipWide, active ? styles.dayChipActive : styles.dayChipIdle]}
+      >
+        <Text style={[typo.labelTag, { color: active ? colors.onPrimary : colors.onSurfaceVariant }]}>יום {d.day}</Text>
+        <Text style={[typo.headlineSm, { color: active ? colors.onPrimary : colors.onSurface }]} numberOfLines={1}>{d.summary}</Text>
+      </Pressable>
+    );
+  });
+
+  const budgetCapsule = (
+    <Card style={styles.budgetCapsule}>
+      <View style={styles.rowCenter}>
+        <View style={styles.walletIcon}>
+          <MaterialIcons name="account-balance-wallet" size={20} color={colors.primary} />
+        </View>
+        <View>
+          <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>הוצאה משוערת ליום זה</Text>
+          <Text style={[typo.headlineSm, { color: colors.onSurface }]}>{money(dayCost, currency)}</Text>
+        </View>
+      </View>
+      <View style={styles.trendPill}>
+        <MaterialIcons name="trending-down" size={14} color={colors.primary} />
+        <Text style={[typo.labelTag, { color: colors.primary }]}>לפי התקציב</Text>
+      </View>
+    </Card>
+  );
+
+  const timeline = (
+    <View style={{ marginTop: spacing.xs }}>
+      {day?.items.map((item, i) => (
+        <TimelineItem key={i} item={item} currency={currency} last={i === day.items.length - 1} />
+      ))}
+    </View>
+  );
+
+  const tips = plan.tips.length ? (
+    <Card style={styles.tips}>
+      <View style={styles.rowCenter}>
+        <MaterialIcons name="tips-and-updates" size={18} color={colors.tertiary} />
+        <Text style={[typo.headlineSm, { color: colors.onSurface }]}>טיפים מה-AI</Text>
+      </View>
+      {plan.tips.map((t, i) => (
+        <View key={i} style={styles.tipRow}>
+          <Text style={[typo.bodySm, { color: colors.tertiary }]}>•</Text>
+          <Text style={[typo.bodySm, { color: colors.onSurfaceVariant, flex: 1 }]}>{t}</Text>
+        </View>
+      ))}
+    </Card>
+  ) : null;
+
   return (
-    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.headRow}>
-        <View style={styles.rowCenter}>
-          <MaterialIcons name="route" size={20} color={colors.primary} />
-          <Text style={[typo.labelTag, { color: colors.primary }]}>תוכנית מותאמת אישית</Text>
-        </View>
-      </View>
-      <Text style={[typo.headlineMd, { color: colors.onSurface }]}>מסלול יומי: {plan.destination}</Text>
-
-      {/* Day scroller */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayScroller}>
-        {plan.days.map((d) => {
-          const active = d.day === activeDay;
-          return (
-            <Pressable key={d.day} onPress={() => setActiveDay(d.day)} style={[styles.dayChip, active ? styles.dayChipActive : styles.dayChipIdle]}>
-              <Text style={[typo.labelTag, { color: active ? colors.onPrimary : colors.onSurfaceVariant }]}>יום {d.day}</Text>
-              <Text style={[typo.headlineSm, { color: active ? colors.onPrimary : colors.onSurface }]} numberOfLines={1}>{d.summary}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {/* Daily budget capsule */}
-      <Card style={styles.budgetCapsule}>
-        <View style={styles.rowCenter}>
-          <View style={styles.walletIcon}>
-            <MaterialIcons name="account-balance-wallet" size={20} color={colors.primary} />
-          </View>
-          <View>
-            <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>הוצאה משוערת ליום זה</Text>
-            <Text style={[typo.headlineSm, { color: colors.onSurface }]}>{money(dayCost, currency)}</Text>
-          </View>
-        </View>
-        <View style={styles.trendPill}>
-          <MaterialIcons name="trending-down" size={14} color={colors.primary} />
-          <Text style={[typo.labelTag, { color: colors.primary }]}>לפי התקציב</Text>
-        </View>
-      </Card>
-
-      {/* Timeline */}
-      <View style={{ marginTop: spacing.xs }}>
-        {day?.items.map((item, i) => (
-          <TimelineItem key={i} item={item} currency={currency} last={i === day.items.length - 1} />
-        ))}
-      </View>
-
-      {/* Tips */}
-      {plan.tips.length ? (
-        <Card style={styles.tips}>
+    <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <Container>
+        <View style={styles.headRow}>
           <View style={styles.rowCenter}>
-            <MaterialIcons name="tips-and-updates" size={18} color={colors.tertiary} />
-            <Text style={[typo.headlineSm, { color: colors.onSurface }]}>טיפים מה-AI</Text>
+            <MaterialIcons name="route" size={20} color={colors.primary} />
+            <Text style={[typo.labelTag, { color: colors.primary }]}>תוכנית מותאמת אישית</Text>
           </View>
-          {plan.tips.map((t, i) => (
-            <View key={i} style={styles.tipRow}>
-              <Text style={[typo.bodySm, { color: colors.tertiary }]}>•</Text>
-              <Text style={[typo.bodySm, { color: colors.onSurfaceVariant, flex: 1 }]}>{t}</Text>
+        </View>
+        <Text style={[typo.headlineMd, { color: colors.onSurface, marginBottom: spacing.sm }]}>מסלול יומי: {plan.destination}</Text>
+
+        {isWide ? (
+          <View style={styles.twoCol}>
+            <View style={styles.rail}>
+              <View style={styles.dayListVertical}>{dayButtons}</View>
+              {budgetCapsule}
             </View>
-          ))}
-        </Card>
-      ) : null}
+            <View style={styles.mainCol}>
+              {timeline}
+              {tips}
+            </View>
+          </View>
+        ) : (
+          <>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dayScroller}>
+              {dayButtons}
+            </ScrollView>
+            {budgetCapsule}
+            {timeline}
+            {tips}
+          </>
+        )}
+      </Container>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: spacing.margin, gap: spacing.sm, paddingBottom: spacing.xl },
+  scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl, gap: spacing.sm },
+  twoCol: { flexDirection: 'row', gap: spacing.lg, alignItems: 'flex-start' },
+  rail: { width: 300, gap: spacing.sm },
+  dayListVertical: { gap: spacing.sm },
+  mainCol: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
   headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   dayScroller: { gap: spacing.sm, paddingVertical: spacing.xs },
   dayChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.lg, maxWidth: 180 },
+  dayChipWide: { maxWidth: 400, width: '100%' },
   dayChipActive: { backgroundColor: colors.primary },
   dayChipIdle: { backgroundColor: colors.surfaceContainerLow },
   budgetCapsule: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

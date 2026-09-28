@@ -1,0 +1,19 @@
+/* Web-only global reset so the app fills the viewport, avoids a page-level
+   horizontal scrollbar, and lets each screen's ScrollView own vertical scroll
+   (no double scrollbars). Imported once from index.ts; ignored on native. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  overflow-x: hidden;
+  background: #f8f9ff;
+}
+
+* {
+  box-sizing: border-box;
+}
