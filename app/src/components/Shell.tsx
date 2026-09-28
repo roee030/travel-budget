@@ -11,6 +11,7 @@ const SUBTITLE: Record<TabKey, string> = {
   budget: 'Budget',
   itinerary: 'Itinerary',
   admin: 'Admin',
+  todo: 'TODO',
 };
 
 const TABS: { key: TabKey; icon: keyof typeof MaterialIcons.glyphMap; label: string }[] = [
@@ -19,6 +20,7 @@ const TABS: { key: TabKey; icon: keyof typeof MaterialIcons.glyphMap; label: str
   { key: 'budget', icon: 'account-balance-wallet', label: 'פירוט ותקציב' },
   { key: 'itinerary', icon: 'calendar-today', label: 'מסלול יומי' },
   { key: 'admin', icon: 'admin-panel-settings', label: 'ניהול' },
+  { key: 'todo', icon: 'checklist', label: 'TODO' },
 ];
 
 function Brand() {

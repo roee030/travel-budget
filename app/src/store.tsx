@@ -2,10 +2,11 @@ import React, { createContext, useCallback, useContext, useMemo, useState } from
 import { fetchPlan, fetchProposals } from './api';
 import { repaceDay, swapPlanItem } from './mock/engine';
 import type { ProposalSummary, TripPlan, TripRequest } from './types';
+import { loadSavedTrips, saveTrip as persistSaveTrip, deleteTrip as persistDeleteTrip, type SavedTrip } from './savedTrips';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export type TabKey = 'wizard' | 'results' | 'budget' | 'itinerary' | 'admin';
+export type TabKey = 'wizard' | 'results' | 'budget' | 'itinerary' | 'admin' | 'todo';
 
 export function defaultRequest(): TripRequest {
   return {
@@ -47,6 +48,10 @@ interface StoreValue {
   swapItem: (dayIndex: number, itemIndex: number) => void;
   repace: (dayIndex: number, mode: 'relax' | 'intense') => void;
   selectFlight: (flightId: string) => void;
+  savedTrips: SavedTrip[];
+  saveCurrentTrip: () => void;
+  removeSavedTrip: (id: string) => void;
+  openSavedTrip: (id: string) => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -60,6 +65,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [loadingProposals, setLoadingProposals] = useState(false);
   const [loadingPlan, setLoadingPlan] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedTrips, setSavedTrips] = useState<SavedTrip[]>(() => loadSavedTrips());
 
   const currency = (request.currency === 'USD' ? 'USD' : 'ILS') as 'ILS' | 'USD';
 
@@ -124,6 +130,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const saveCurrentTrip = useCallback(() => {
+    if (!plan) return;
+    setSavedTrips(persistSaveTrip(plan));
+  }, [plan]);
+
+  const removeSavedTrip = useCallback((id: string) => {
+    setSavedTrips(persistDeleteTrip(id));
+  }, []);
+
+  const openSavedTrip = useCallback(
+    (id: string) => {
+      const saved = savedTrips.find((t) => t.id === id);
+      if (!saved) return;
+      setPlan(saved.plan);
+      setRequest(saved.plan.request);
+      setSelectedProposalId(saved.plan.id);
+      setTab('itinerary');
+    },
+    [savedTrips],
+  );
+
   const value = useMemo<StoreValue>(
     () => ({
       tab,
@@ -143,8 +170,32 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       swapItem,
       repace,
       selectFlight,
+      savedTrips,
+      saveCurrentTrip,
+      removeSavedTrip,
+      openSavedTrip,
     }),
-    [tab, request, proposals, plan, selectedProposalId, loadingProposals, loadingPlan, error, currency, toggleCurrency, runSearch, choose, swapItem, repace, selectFlight],
+    [
+      tab,
+      request,
+      proposals,
+      plan,
+      selectedProposalId,
+      loadingProposals,
+      loadingPlan,
+      error,
+      currency,
+      toggleCurrency,
+      runSearch,
+      choose,
+      swapItem,
+      repace,
+      selectFlight,
+      savedTrips,
+      saveCurrentTrip,
+      removeSavedTrip,
+      openSavedTrip,
+    ],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

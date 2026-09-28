@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
-import { colors, radius, spacing, type as typo } from '../theme';
+import { colors, radius, spacing, type as typo, shadow } from '../theme';
 import { Card } from '../components/ui';
 import { PlaceImage } from '../components/RemoteImage';
 import { Container } from '../components/Layout';
@@ -76,6 +76,29 @@ function Stepper({ value, onChange, min = 0 }: { value: number; onChange: (v: nu
   );
 }
 
+function SavedTripsStrip() {
+  const { savedTrips, openSavedTrip, removeSavedTrip } = useStore();
+  if (savedTrips.length === 0) return null;
+  return (
+    <View style={{ gap: spacing.sm }}>
+      <Text style={[typo.labelTag, { color: colors.onSurfaceVariant }]}>הטיולים השמורים שלי</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+        {savedTrips.map((t) => (
+          <Pressable key={t.id} style={styles.savedCard} onPress={() => openSavedTrip(t.id)}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={[typo.bodyMd, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>{t.plan.destination}</Text>
+              <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>{t.plan.request.nights} לילות • {money(t.plan.budgetTotal, t.plan.currency)}</Text>
+            </View>
+            <Pressable hitSlop={8} onPress={() => removeSavedTrip(t.id)}>
+              <MaterialIcons name="close" size={16} color={colors.outline} />
+            </Pressable>
+          </Pressable>
+        ))}
+      </ScrollView>
+    </View>
+  );
+}
+
 export function WizardScreen() {
   const { request, setRequest, runSearch, loadingProposals, error } = useStore();
   const { isWide } = useResponsive();
@@ -143,6 +166,7 @@ export function WizardScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <Container>
           <View style={[styles.inner, isWide && styles.innerWide]}>
+            {step === 0 ? <SavedTripsStrip /> : null}
             {/* Progress header */}
             <View style={styles.progress}>
               {STEPS.map((s, i) => {
@@ -395,6 +419,7 @@ function StepTitle({ icon, title, subtitle }: { icon: keyof typeof MaterialIcons
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl },
+  savedCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surfaceContainerLowest, padding: spacing.sm, borderRadius: radius.md, minWidth: 180, ...shadow.card },
   inner: { gap: spacing.md },
   innerWide: { maxWidth: 720, alignSelf: 'center', width: '100%' },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

@@ -78,6 +78,17 @@ function DetailRow({ label, value }: { label: string; value?: string }) {
   );
 }
 
+function SaveTripButton() {
+  const { plan, savedTrips, saveCurrentTrip } = useStore();
+  const saved = !!plan && savedTrips.some((t) => t.id === plan.id);
+  return (
+    <Pressable style={[styles.saveBtn, saved && styles.saveBtnSaved]} onPress={saveCurrentTrip} disabled={saved}>
+      <MaterialIcons name={saved ? 'bookmark' : 'bookmark-border'} size={16} color={saved ? colors.primary : colors.onSurfaceVariant} />
+      <Text style={[typo.labelTag, { color: saved ? colors.primary : colors.onSurfaceVariant }]}>{saved ? 'נשמר' : 'שמור טיול'}</Text>
+    </Pressable>
+  );
+}
+
 export function BudgetScreen() {
   const { plan, loadingPlan, currency, setTab, selectFlight } = useStore();
   const { isWide } = useResponsive();
@@ -116,9 +127,12 @@ export function BudgetScreen() {
           <View style={isWide ? styles.leftColWide : styles.col}>
       {/* Overview */}
       <Card style={{ backgroundColor: colors.surfaceContainerLow, gap: spacing.xs }}>
-        <View style={styles.rowCenter}>
-          <MaterialIcons name="verified" size={18} color={colors.primary} />
-          <Text style={[typo.labelTag, { color: colors.primary }]}>חבילה מותאמת אישית</Text>
+        <View style={styles.between}>
+          <View style={styles.rowCenter}>
+            <MaterialIcons name="verified" size={18} color={colors.primary} />
+            <Text style={[typo.labelTag, { color: colors.primary }]}>חבילה מותאמת אישית</Text>
+          </View>
+          <SaveTripButton />
         </View>
         <Text style={[typo.headlineMd, { color: colors.onSurface }]}>{plan.destination} • {plan.request.nights} לילות</Text>
       </Card>
@@ -215,6 +229,8 @@ export function BudgetScreen() {
 
 const styles = StyleSheet.create({
   scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl },
+  saveBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.surfaceContainer, paddingHorizontal: spacing.sm, height: 32, borderRadius: radius.full },
+  saveBtnSaved: { backgroundColor: colors.primaryContainer },
   oneCol: { gap: spacing.md },
   flightCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surfaceContainerLow, padding: spacing.sm, borderRadius: radius.md, borderWidth: 2, borderColor: 'transparent' },
   flightCardHover: { backgroundColor: colors.surfaceContainer },
