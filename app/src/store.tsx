@@ -14,7 +14,7 @@ export function defaultRequest(): TripRequest {
     destinationHints: [],
     departDate: null,
     returnDate: null,
-    flexibleDates: true,
+    flexibleDates: false,
     targetMonth: null,
     nights: 5,
     partyType: 'couple',
