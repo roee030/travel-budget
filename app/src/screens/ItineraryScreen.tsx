@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo, categoryVisual } from '../theme';
-import { Card, destinationImageUrl } from '../components/ui';
+import { Card } from '../components/ui';
+import { PlaceImage } from '../components/RemoteImage';
 import { Container } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
@@ -43,7 +44,7 @@ function TimelineItem({ item, currency, last, onSwap }: { item: ItineraryItem; c
 
         {item.imageQuery ? (
           <View style={styles.placeImageWrap}>
-            <Image source={{ uri: destinationImageUrl(item.imageQuery, 640, 360) }} style={styles.placeImage} resizeMode="cover" />
+            <PlaceImage query={item.imageQuery} size={640} />
           </View>
         ) : null}
 

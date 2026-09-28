@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { colors, radius, spacing, type as typo } from '../theme';
-import { Card, destinationImageUrl } from '../components/ui';
+import { Card } from '../components/ui';
+import { PlaceImage } from '../components/RemoteImage';
 import { Container } from '../components/Layout';
 import { BudgetSlider } from '../components/BudgetSlider';
 import { useResponsive } from '../hooks/useResponsive';
@@ -185,7 +186,9 @@ export function WizardScreen() {
                       const active = request.destination === d.key;
                       return (
                         <Pressable key={d.key} onPress={() => setRequest((r) => ({ ...r, destination: d.key }))} style={[styles.destCard, active && styles.destCardActive]}>
-                          <Image source={{ uri: destinationImageUrl(d.photo, 400, 300) }} style={styles.destImage} resizeMode="cover" />
+                          <View style={styles.destImage}>
+                            <PlaceImage query={d.photo} size={400} />
+                          </View>
                           <View style={styles.destScrim} />
                           {active ? (
                             <View style={styles.destCheck}><MaterialIcons name="check" size={16} color={colors.onPrimary} /></View>

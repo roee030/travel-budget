@@ -5,7 +5,8 @@ import { colors, radius, spacing, type as typo } from '../theme';
 import { Card } from '../components/ui';
 import { Container } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
-import { API_URL } from '../api';
+import { API_URL, isDemo } from '../api';
+import { snapshotSummaries, findSnapshot } from '../data/knowledgeSnapshot';
 import {
   adminApi,
   CATEGORY_LABELS,
@@ -24,7 +25,7 @@ function NotConnected() {
       <MaterialIcons name="cloud-off" size={40} color={colors.outline} />
       <Text style={[typo.headlineSm, { color: colors.onSurface, textAlign: 'center' }]}>אין חיבור למאגר הפנימי</Text>
       <Text style={[typo.bodyMd, { color: colors.onSurfaceVariant, textAlign: 'center' }]}>
-        דף הניהול פועל מול השרת האמיתי בלבד (לא מצב הדגמה), כדי שכל עריכה באמת תישמר במאגר.
+        דף הניהול פועל מול השרת האמיתי בלבד, כדי שכל עריכה באמת תישמר במאגר.
       </Text>
       <Text style={[typo.bodySm, { color: colors.onSurfaceVariant, textAlign: 'center' }]}>
         הרימו את השרת המקומי (npm run dev) או הגדירו EXPO_PUBLIC_API_URL לכתובת שרת חי, ואז רעננו.{'\n'}
@@ -115,11 +116,13 @@ function CategorySection({
   category,
   items,
   onChanged,
+  readOnly = false,
 }: {
   destination: string;
   category: AdminCategoryKey;
   items: AdminKnowledgeItem[];
   onChanged: () => void;
+  readOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -155,10 +158,10 @@ function CategorySection({
       {open ? (
         <View style={styles.detail}>
           {items.map((it) =>
-            editingId === it.id ? (
+            !readOnly && editingId === it.id ? (
               <ItemEditor key={it.id} item={it} onSave={(p) => save(it.id, p)} onDelete={() => del(it.id)} onCancel={() => setEditingId(null)} />
             ) : (
-              <Pressable key={it.id} style={styles.itemRow} onPress={() => setEditingId(it.id)}>
+              <Pressable key={it.id} style={styles.itemRow} onPress={() => !readOnly && setEditingId(it.id)}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <View style={styles.rowCenter}>
                     {it.mustDo ? <MaterialIcons name="verified" size={14} color={colors.primary} /> : null}
@@ -167,11 +170,11 @@ function CategorySection({
                   <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]} numberOfLines={2}>{it.descriptionHe || '—'}</Text>
                 </View>
                 <StarScore value={it.popularityScore} />
-                <MaterialIcons name="edit" size={16} color={colors.onSurfaceVariant} />
+                {!readOnly ? <MaterialIcons name="edit" size={16} color={colors.onSurfaceVariant} /> : null}
               </Pressable>
             ),
           )}
-          {adding ? (
+          {readOnly ? null : adding ? (
             <View style={styles.row}>
               <TextInput style={[styles.input, { flex: 1 }]} value={newName} onChangeText={setNewName} placeholder="שם פריט חדש" placeholderTextColor={colors.outline} />
               <Pressable style={[styles.smallBtn, styles.smallBtnPrimary]} onPress={createNew}>
@@ -199,6 +202,11 @@ export function AdminScreen() {
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   const loadList = useCallback(async () => {
+    if (isDemo) {
+      setDestinations([...snapshotSummaries].sort((a, b) => a.destination.localeCompare(b.destination)));
+      setConn('connected');
+      return;
+    }
     try {
       const { destinations } = await adminApi.listDestinations();
       setDestinations(destinations.sort((a, b) => a.destination.localeCompare(b.destination)));
@@ -214,6 +222,10 @@ export function AdminScreen() {
 
   const loadDetail = useCallback(async (destination: string) => {
     setSelected(destination);
+    if (isDemo) {
+      setDetail(findSnapshot(destination));
+      return;
+    }
     setLoadingDetail(true);
     try {
       const d = await adminApi.getDestination(destination);
@@ -250,8 +262,16 @@ export function AdminScreen() {
             <Text style={[typo.headlineMd, { color: colors.onSurface }]}>ניהול מאגר הידע הפנימי</Text>
           </View>
           <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>
-            {destinations.length} יעדים במאגר · פתוח לעריכה לכולם כרגע (ללא הרשאות)
+            {destinations.length} יעדים במאגר{isDemo ? '' : ' · פתוח לעריכה לכולם כרגע (ללא הרשאות)'}
           </Text>
+          {isDemo ? (
+            <View style={styles.demoBanner}>
+              <MaterialIcons name="visibility" size={16} color={colors.tertiary} />
+              <Text style={[typo.bodySm, { color: colors.tertiary, flex: 1 }]}>
+                מצב הדגמה: תצוגה בלבד של המחקר שנשמר מראש (541 פריטים, 12 יעדים, כולם עם מקורות). עריכה בזמן אמת דורשת חיבור לשרת חי — הגדירו EXPO_PUBLIC_API_URL.
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={isWide ? styles.twoCol : styles.oneCol}>
@@ -291,7 +311,7 @@ export function AdminScreen() {
                   {detail.weatherHe ? <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>🌤 {detail.weatherHe}</Text> : null}
                 </Card>
                 {CATEGORY_ORDER.map((cat) => (
-                  <CategorySection key={cat} destination={detail.destination} category={cat} items={detail.categories[cat] ?? []} onChanged={refreshSelected} />
+                  <CategorySection key={cat} destination={detail.destination} category={cat} items={detail.categories[cat] ?? []} onChanged={refreshSelected} readOnly={isDemo} />
                 ))}
               </View>
             ) : (
@@ -308,6 +328,7 @@ const styles = StyleSheet.create({
   scroll: { paddingVertical: spacing.margin, paddingBottom: spacing.xl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl },
   notConnected: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm, padding: spacing.xl },
+  demoBanner: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, backgroundColor: 'rgba(192,84,0,0.10)', padding: spacing.sm, borderRadius: radius.md },
   rowCenter: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   row: { flexDirection: 'row', gap: spacing.sm },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },

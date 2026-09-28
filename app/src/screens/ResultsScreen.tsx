@@ -1,18 +1,19 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
-import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, destinationImageUrl, ProposalCardSkeleton } from '../components/ui';
+import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, ProposalCardSkeleton } from '../components/ui';
+import { PlaceImage } from '../components/RemoteImage';
 import { Container, Grid } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
 import { isDemo } from '../api';
 import type { ProposalStrategy, ProposalSummary } from '../types';
 
-const STRATEGY: Record<ProposalStrategy, { label: string; icon: keyof typeof MaterialIcons.glyphMap }> = {
-  best_match: { label: 'בחירת ה-AI', icon: 'auto-awesome' },
-  max_savings: { label: 'חיסכון מקסימלי', icon: 'savings' },
-  exact_budget: { label: 'בדיוק בתקציב', icon: 'adjust' },
+const STRATEGY: Record<ProposalStrategy, { label: string; icon: keyof typeof MaterialIcons.glyphMap; blurb: string }> = {
+  best_match: { label: 'בחירת ה-AI', icon: 'auto-awesome', blurb: 'השילוב המאוזן ביותר בין מחיר, איכות ומיקום' },
+  max_savings: { label: 'חיסכון מקסימלי', icon: 'savings', blurb: 'המחיר הנמוך ביותר שעדיין עומד בדרישות שלכם' },
+  exact_budget: { label: 'בדיוק בתקציב', icon: 'adjust', blurb: 'מנצלת את מלוא התקציב שהגדרתם, בלי להשאיר עודף' },
 };
 
 const LEGEND: { key: string; label: string }[] = [
@@ -43,7 +44,7 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
     <Card style={{ padding: 0, overflow: 'hidden' }}>
       {/* Hero */}
       <View style={[styles.hero, { height: featured ? 150 : 120 }]}>
-        <Image source={{ uri: destinationImageUrl(proposal.imageQuery) }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+        <PlaceImage query={proposal.imageQuery} size={900} />
         <View style={[StyleSheet.absoluteFill, styles.heroScrim]} />
         <View style={styles.heroBadges}>
           <View style={styles.aiBadge}>
@@ -57,6 +58,9 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
       </View>
 
       <View style={{ padding: spacing.md, gap: spacing.md }}>
+        {/* Strategy explanation — what makes this proposal different */}
+        <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>{s.blurb}</Text>
+
         {/* Budget status */}
         <View style={[styles.budgetBanner, { backgroundColor: over ? 'rgba(186,26,26,0.08)' : 'rgba(0,131,120,0.10)' }]}>
           <View style={styles.rowCenter}>
@@ -163,6 +167,9 @@ export function ResultsScreen() {
               <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>תקציב: {money(request.budgetTotal, request.currency)}</Text>
               <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>• {request.nights} לילות</Text>
             </View>
+            <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>
+              כל הצעה בנויה סביב אסטרטגיה שונה — {proposals.map((p) => STRATEGY[p.strategy].label).join(' • ')} — השוו לפי המחיר, ה״תובנת AI״ ותג האסטרטגיה על כל כרטיס.
+            </Text>
             {isDemo ? (
               <Text style={[typo.labelTag, { color: colors.onSurfaceVariant }]}>מצב הדגמה — נתונים לדוגמה</Text>
             ) : null}
