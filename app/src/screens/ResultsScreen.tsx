@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet, ScrollView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo } from '../theme';
-import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, destinationImageUrl } from '../components/ui';
+import { Card, SegmentedBudgetBar, LegendDot, budgetCategoryColor, destinationImageUrl, ProposalCardSkeleton } from '../components/ui';
 import { Container, Grid } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
@@ -121,8 +121,30 @@ function ProposalCard({ proposal, featured, onChoose }: { proposal: ProposalSumm
 }
 
 export function ResultsScreen() {
-  const { proposals, request, setTab, choose } = useStore();
+  const { proposals, request, setTab, choose, loadingProposals } = useStore();
   const { columns } = useResponsive();
+
+  if (loadingProposals) {
+    return (
+      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <Container>
+          <View style={styles.container}>
+            <Card style={styles.summaryPill}>
+              <View style={styles.rowCenter}>
+                <MaterialIcons name="auto-awesome" size={22} color={colors.primary} />
+                <Text style={[typo.headlineSm, { color: colors.primary }]}>ה-AI בונה לך הצעות…</Text>
+              </View>
+            </Card>
+            <Grid columns={columns}>
+              {[0, 1, 2].map((i) => (
+                <ProposalCardSkeleton key={i} />
+              ))}
+            </Grid>
+          </View>
+        </Container>
+      </ScrollView>
+    );
+  }
 
   if (proposals.length === 0) {
     return <EmptyState onPlan={() => setTab('wizard')} />;

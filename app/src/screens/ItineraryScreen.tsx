@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, radius, spacing, type as typo, categoryVisual } from '../theme';
-import { Card } from '../components/ui';
+import { Card, destinationImageUrl } from '../components/ui';
 import { Container } from '../components/Layout';
 import { useResponsive } from '../hooks/useResponsive';
 import { useStore, money } from '../store';
+import { findDestination } from '../mock/catalog';
 import type { ItineraryItem } from '../types';
 
 function costBadge(item: ItineraryItem, currency: string) {
@@ -21,7 +22,7 @@ function costBadge(item: ItineraryItem, currency: string) {
   return { label: money(item.estimatedCost, currency), bg: colors.surfaceContainer, fg: colors.onSurfaceVariant };
 }
 
-function TimelineItem({ item, currency, last }: { item: ItineraryItem; currency: string; last: boolean }) {
+function TimelineItem({ item, currency, last, onSwap }: { item: ItineraryItem; currency: string; last: boolean; onSwap: () => void }) {
   const vis = categoryVisual[item.category] ?? categoryVisual.free;
   const badge = costBadge(item, currency);
   const isFood = item.category === 'restaurant';
@@ -39,15 +40,56 @@ function TimelineItem({ item, currency, last }: { item: ItineraryItem; currency:
         </View>
         <Text style={[typo.headlineSm, { color: colors.onSurface }]}>{item.title}</Text>
         {item.description ? <Text style={[typo.bodyMd, { color: colors.onSurfaceVariant }]}>{item.description}</Text> : null}
+
+        {item.imageQuery ? (
+          <View style={styles.placeImageWrap}>
+            <Image source={{ uri: destinationImageUrl(item.imageQuery, 640, 360) }} style={styles.placeImage} resizeMode="cover" />
+          </View>
+        ) : null}
+
+        {item.rating || item.social ? (
+          <View style={styles.socialRow}>
+            {item.rating ? (
+              <>
+                <MaterialIcons name="star" size={16} color={colors.tertiary} />
+                <Text style={[typo.labelTag, { color: colors.onSurface }]}>{item.rating}</Text>
+              </>
+            ) : null}
+            {item.social ? <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>• {item.social}</Text> : null}
+          </View>
+        ) : null}
+
+        {item.tip ? (
+          <View style={styles.tipAccent}>
+            <MaterialIcons name="tips-and-updates" size={16} color={colors.tertiary} />
+            <Text style={[typo.bodySm, { color: colors.onSurface, flex: 1 }]}>
+              <Text style={{ fontFamily: 'Rubik_600SemiBold', color: colors.tertiary }}>טיפ AI: </Text>
+              {item.tip}
+            </Text>
+          </View>
+        ) : null}
+
+        {item.swappable ? (
+          <Pressable
+            style={({ pressed, hovered }: any) => [styles.swapBtn, hovered && { backgroundColor: colors.surfaceContainerHigh }, pressed && { opacity: 0.85 }]}
+            onPress={onSwap}
+          >
+            <MaterialIcons name="sync" size={16} color={colors.tertiary} />
+            <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>
+              {isFood ? 'החלף מסעדה עם AI' : 'החלף אטרקציה עם AI'}
+            </Text>
+          </Pressable>
+        ) : null}
       </Card>
     </View>
   );
 }
 
 export function ItineraryScreen() {
-  const { plan, loadingPlan, currency } = useStore();
+  const { plan, loadingPlan, currency, swapItem, repace } = useStore();
   const { isWide } = useResponsive();
   const [activeDay, setActiveDay] = useState(1);
+  const [paceOpen, setPaceOpen] = useState(false);
 
   if (loadingPlan) {
     return (
@@ -67,7 +109,9 @@ export function ItineraryScreen() {
   }
 
   const day = plan.days.find((d) => d.day === activeDay) ?? plan.days[0];
+  const dayIndex = Math.max(0, plan.days.findIndex((d) => d.day === day.day));
   const dayCost = day ? day.items.reduce((s, it) => s + (it.estimatedCost || 0), 0) : 0;
+  const weather = findDestination(plan.destination)?.weather;
 
   const dayButtons = plan.days.map((d) => {
     const active = d.day === activeDay;
@@ -104,9 +148,19 @@ export function ItineraryScreen() {
   const timeline = (
     <View style={{ marginTop: spacing.xs }}>
       {day?.items.map((item, i) => (
-        <TimelineItem key={i} item={item} currency={currency} last={i === day.items.length - 1} />
+        <TimelineItem key={i} item={item} currency={currency} last={i === day.items.length - 1} onSwap={() => swapItem(dayIndex, i)} />
       ))}
     </View>
+  );
+
+  const paceButton = (
+    <Pressable
+      style={({ pressed }: any) => [styles.paceBtn, pressed && { opacity: 0.9 }]}
+      onPress={() => setPaceOpen((o) => !o)}
+    >
+      <MaterialIcons name="tune" size={20} color={colors.onTertiary} />
+      <Text style={[typo.headlineSm, { color: colors.onTertiary }]}>בקש מה-AI לרווח / לצופף את הלו״ז 🤖</Text>
+    </Pressable>
   );
 
   const tips = plan.tips.length ? (
@@ -132,6 +186,12 @@ export function ItineraryScreen() {
             <MaterialIcons name="route" size={20} color={colors.primary} />
             <Text style={[typo.labelTag, { color: colors.primary }]}>תוכנית מותאמת אישית</Text>
           </View>
+          {weather ? (
+            <View style={styles.weatherPill}>
+              <MaterialIcons name="wb-sunny" size={16} color={colors.tertiary} />
+              <Text style={[typo.bodySm, { color: colors.onSurface }]}>{weather}</Text>
+            </View>
+          ) : null}
         </View>
         <Text style={[typo.headlineMd, { color: colors.onSurface, marginBottom: spacing.sm }]}>מסלול יומי: {plan.destination}</Text>
 
@@ -156,6 +216,33 @@ export function ItineraryScreen() {
             {tips}
           </>
         )}
+
+        <View style={{ marginTop: spacing.md }}>{paceButton}</View>
+
+        {paceOpen ? (
+          <Card style={styles.paceModal}>
+            <View style={styles.between}>
+              <View style={styles.rowCenter}>
+                <MaterialIcons name="smart-toy" size={20} color={colors.tertiary} />
+                <Text style={[typo.headlineSm, { color: colors.onSurface }]}>התאמת קצב היום</Text>
+              </View>
+              <Pressable onPress={() => setPaceOpen(false)}>
+                <MaterialIcons name="close" size={20} color={colors.onSurfaceVariant} />
+              </Pressable>
+            </View>
+            <Text style={[typo.bodySm, { color: colors.onSurfaceVariant }]}>איך לעצב מחדש את יום {day.day}?</Text>
+            <View style={styles.paceOptions}>
+              <Pressable style={styles.paceOption} onPress={() => { repace(dayIndex, 'relax'); setPaceOpen(false); }}>
+                <MaterialIcons name="bedtime" size={18} color={colors.primary} />
+                <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>יותר מנוחה</Text>
+              </Pressable>
+              <Pressable style={styles.paceOption} onPress={() => { repace(dayIndex, 'intense'); setPaceOpen(false); }}>
+                <MaterialIcons name="bolt" size={18} color={colors.tertiary} />
+                <Text style={[typo.bodySm, { color: colors.onSurface, fontFamily: 'Rubik_600SemiBold' }]}>הספק מירבי</Text>
+              </Pressable>
+            </View>
+          </Card>
+        ) : null}
       </Container>
     </ScrollView>
   );
@@ -186,4 +273,14 @@ const styles = StyleSheet.create({
   badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full },
   tips: { gap: spacing.xs, marginTop: spacing.sm },
   tipRow: { flexDirection: 'row', gap: spacing.xs },
+  weatherPill: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceContainer, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.full },
+  placeImageWrap: { height: 130, borderRadius: radius.md, overflow: 'hidden', marginTop: 4 },
+  placeImage: { width: '100%', height: '100%' },
+  socialRow: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: colors.surfaceContainerLow, paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radius.md, marginTop: 2, flexWrap: 'wrap' },
+  tipAccent: { flexDirection: 'row', gap: spacing.xs, backgroundColor: 'rgba(192,84,0,0.10)', padding: spacing.sm, borderRadius: radius.md, marginTop: 2, alignItems: 'flex-start' },
+  swapBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.surfaceContainer, paddingVertical: 8, borderRadius: radius.md, marginTop: 4 },
+  paceBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, height: 52, borderRadius: radius.xl, backgroundColor: colors.tertiary },
+  paceModal: { marginTop: spacing.sm, gap: spacing.sm },
+  paceOptions: { flexDirection: 'row', gap: spacing.sm },
+  paceOption: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: colors.surfaceContainer, paddingVertical: 12, borderRadius: radius.md },
 });

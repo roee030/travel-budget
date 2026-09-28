@@ -88,6 +88,12 @@ export interface ItineraryItem {
   description: string;
   estimatedCost: number;
   refId?: string;
+  /** rich fields used by the itinerary timeline (mockup parity) */
+  rating?: number;
+  social?: string; // e.g. "מוביל בהמלצות Reddit & Google"
+  imageQuery?: string; // themed photo for the place
+  swappable?: boolean; // restaurants/attractions can be swapped by "AI"
+  tip?: string; // per-item AI tip
 }
 export interface ItineraryDay {
   day: number;

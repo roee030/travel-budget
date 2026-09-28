@@ -1,6 +1,9 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { fetchPlan, fetchProposals } from './api';
+import { repaceDay, swapPlanItem } from './mock/engine';
 import type { ProposalSummary, TripPlan, TripRequest } from './types';
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export type TabKey = 'wizard' | 'results' | 'budget' | 'itinerary';
 
@@ -41,6 +44,8 @@ interface StoreValue {
   toggleCurrency: () => void;
   runSearch: () => Promise<void>;
   choose: (proposal: ProposalSummary) => Promise<void>;
+  swapItem: (dayIndex: number, itemIndex: number) => void;
+  repace: (dayIndex: number, mode: 'relax' | 'intense') => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
@@ -64,10 +69,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const runSearch = useCallback(async () => {
     setLoadingProposals(true);
     setError(null);
+    setTab('results');
     try {
-      const { proposals } = await fetchProposals(request);
+      const [{ proposals }] = await Promise.all([fetchProposals(request), sleep(650)]);
       setProposals(proposals);
-      setTab('results');
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -82,7 +87,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       setTab('budget');
       try {
-        const planned = await fetchPlan({ ...request, destination: proposal.destination });
+        const [planned] = await Promise.all([
+          fetchPlan({ ...request, destination: proposal.destination }),
+          sleep(800),
+        ]);
         setPlan(planned);
       } catch (e) {
         setError((e as Error).message);
@@ -92,6 +100,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     },
     [request],
   );
+
+  const swapItem = useCallback((dayIndex: number, itemIndex: number) => {
+    setPlan((p) => (p ? swapPlanItem(p, dayIndex, itemIndex) : p));
+  }, []);
+
+  const repace = useCallback((dayIndex: number, mode: 'relax' | 'intense') => {
+    setPlan((p) => (p ? repaceDay(p, dayIndex, mode) : p));
+  }, []);
 
   const value = useMemo<StoreValue>(
     () => ({
@@ -109,8 +125,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       toggleCurrency,
       runSearch,
       choose,
+      swapItem,
+      repace,
     }),
-    [tab, request, proposals, plan, selectedProposalId, loadingProposals, loadingPlan, error, currency, toggleCurrency, runSearch, choose],
+    [tab, request, proposals, plan, selectedProposalId, loadingProposals, loadingPlan, error, currency, toggleCurrency, runSearch, choose, swapItem, repace],
   );
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

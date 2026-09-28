@@ -1,7 +1,38 @@
-import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ViewStyle, StyleProp, Animated, DimensionValue } from 'react-native';
 import { colors, radius, spacing, shadow, type as typo } from '../theme';
 import type { BudgetAllocation } from '../types';
+
+/** A pulsing placeholder block for loading states. */
+export function Skeleton({ width = '100%', height = 16, radius: r = 8, style }: { width?: DimensionValue; height?: number; radius?: number; style?: StyleProp<ViewStyle> }) {
+  const opacity = useRef(new Animated.Value(0.5)).current;
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.5, duration: 700, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [opacity]);
+  return <Animated.View style={[{ width, height, borderRadius: r, backgroundColor: colors.surfaceContainerHigh, opacity }, style]} />;
+}
+
+/** A skeleton stand-in for a proposal card while results load. */
+export function ProposalCardSkeleton() {
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden' }}>
+      <Skeleton height={120} radius={0} />
+      <View style={{ padding: spacing.md, gap: spacing.sm }}>
+        <Skeleton height={40} />
+        <Skeleton height={14} width="70%" />
+        <Skeleton height={10} />
+        <Skeleton height={48} radius={12} />
+      </View>
+    </Card>
+  );
+}
 
 export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
   return <View style={[styles.card, style]}>{children}</View>;
