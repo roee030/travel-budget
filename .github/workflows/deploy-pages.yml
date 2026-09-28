@@ -43,6 +43,9 @@ jobs:
           EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
         run: cd app && npx expo export --platform web
 
+      - name: Disable Jekyll (serve _expo/ folder as-is)
+        run: touch app/dist/.nojekyll
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
