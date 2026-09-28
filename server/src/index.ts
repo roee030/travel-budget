@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config, hasAnthropic } from './config.js';
 import { planRouter } from './routes/plan.js';
+import { adminRouter } from './routes/admin.js';
 
 const app = express();
 
@@ -27,6 +28,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api', planRouter);
+// Internal knowledge-base admin API — open for now (no auth), see routes/admin.ts.
+app.use('/api/admin', adminRouter);
 
 app.listen(config.port, () => {
   console.log(`\n🧳 Trip Budget Planner API listening on http://localhost:${config.port}`);

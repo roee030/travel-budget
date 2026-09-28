@@ -5,7 +5,7 @@ import type { ProposalSummary, TripPlan, TripRequest } from './types';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export type TabKey = 'wizard' | 'results' | 'budget' | 'itinerary';
+export type TabKey = 'wizard' | 'results' | 'budget' | 'itinerary' | 'admin';
 
 export function defaultRequest(): TripRequest {
   return {

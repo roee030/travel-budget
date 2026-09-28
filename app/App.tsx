@@ -16,6 +16,7 @@ import { WizardScreen } from './src/screens/WizardScreen';
 import { ResultsScreen } from './src/screens/ResultsScreen';
 import { BudgetScreen } from './src/screens/BudgetScreen';
 import { ItineraryScreen } from './src/screens/ItineraryScreen';
+import { AdminScreen } from './src/screens/AdminScreen';
 
 // Force RTL for the Hebrew UI.
 if (!I18nManager.isRTL) {
@@ -35,6 +36,7 @@ function Screens() {
       {tab === 'results' && <ResultsScreen />}
       {tab === 'budget' && <BudgetScreen />}
       {tab === 'itinerary' && <ItineraryScreen />}
+      {tab === 'admin' && <AdminScreen />}
     </View>
   );
 }

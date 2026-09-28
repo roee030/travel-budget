@@ -10,6 +10,7 @@ const SUBTITLE: Record<TabKey, string> = {
   results: 'Results',
   budget: 'Budget',
   itinerary: 'Itinerary',
+  admin: 'Admin',
 };
 
 const TABS: { key: TabKey; icon: keyof typeof MaterialIcons.glyphMap; label: string }[] = [
@@ -17,6 +18,7 @@ const TABS: { key: TabKey; icon: keyof typeof MaterialIcons.glyphMap; label: str
   { key: 'results', icon: 'travel-explore', label: 'הצעות AI' },
   { key: 'budget', icon: 'account-balance-wallet', label: 'פירוט ותקציב' },
   { key: 'itinerary', icon: 'calendar-today', label: 'מסלול יומי' },
+  { key: 'admin', icon: 'admin-panel-settings', label: 'ניהול' },
 ];
 
 function Brand() {
